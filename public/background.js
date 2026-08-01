@@ -1,5 +1,7 @@
-// background.js
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+// background.js - Firefox compatible version
+const browser = typeof browser !== 'undefined' ? browser : chrome;
+
+browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "startTimer") {
     const { title, message, duration } = request.payload;
     startTimer(title, message, duration, sendResponse);
@@ -11,12 +13,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 function startTimer(title, message, duration, sendResponse) {
-  chrome.alarms.clearAll();
+  browser.alarms.clearAll();
 
   const startTime = Date.now();
   const endTime = startTime + duration * 1000;
 
-  chrome.alarms.create("reminderAlarm", {
+  browser.alarms.create("reminderAlarm", {
     when: endTime,
   });
 
@@ -31,13 +33,13 @@ function startTimer(title, message, duration, sendResponse) {
     notificationShown: false,
   };
 
-  chrome.storage.local.set({ timerData }, () => {
+  browser.storage.local.set({ timerData }).then(() => {
     sendResponse({ status: "Timer started" });
   });
 }
 
 function getTimerStatus(sendResponse) {
-  chrome.storage.local.get(["timerData"], (result) => {
+  browser.storage.local.get(["timerData"]).then((result) => {
     if (result.timerData && result.timerData.isActive) {
       const now = Date.now();
       const timeRemaining = Math.max(
@@ -52,7 +54,7 @@ function getTimerStatus(sendResponse) {
         isActive,
       };
 
-      chrome.storage.local.set({ timerData: updatedTimerData }, () => {
+      browser.storage.local.set({ timerData: updatedTimerData }).then(() => {
         sendResponse({
           timeRemaining,
           isActive,
@@ -70,9 +72,9 @@ function getTimerStatus(sendResponse) {
   });
 }
 
-chrome.alarms.onAlarm.addListener((alarm) => {
+browser.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === "reminderAlarm") {
-    chrome.storage.local.get(["timerData"], (result) => {
+    browser.storage.local.get(["timerData"]).then((result) => {
       if (result.timerData && !result.timerData.notificationShown) {
         showNotification(result.timerData.title, result.timerData.message);
       }
@@ -81,12 +83,11 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 });
 
 function showNotification(title, message) {
-  chrome.notifications.create({
+  browser.notifications.create({
     type: "basic",
     iconUrl: "icons/bell.png",
     title: title,
     message: message,
-    requireInteraction: true,
     buttons: [
       {
         title: "Got It! 👍",
@@ -94,7 +95,7 @@ function showNotification(title, message) {
     ],
   });
 
-  chrome.storage.local.get(["timerData"], (result) => {
+  browser.storage.local.get(["timerData"]).then((result) => {
     if (result.timerData) {
       const updatedTimerData = {
         ...result.timerData,
@@ -102,21 +103,21 @@ function showNotification(title, message) {
         timeRemaining: 0,
         notificationShown: true,
       };
-      chrome.storage.local.set({ timerData: updatedTimerData });
+      browser.storage.local.set({ timerData: updatedTimerData });
     }
   });
 }
 
-chrome.notifications.onButtonClicked.addListener((notificationId) => {
-  chrome.notifications.clear(notificationId);
+browser.notifications.onButtonClicked.addListener((notificationId) => {
+  browser.notifications.clear(notificationId);
 });
 
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.local.get(["timerData"], (result) => {
+browser.runtime.onInstalled.addListener(() => {
+  browser.storage.local.get(["timerData"]).then((result) => {
     if (result.timerData && result.timerData.isActive) {
       const now = Date.now();
       if (result.timerData.endTime > now) {
-        chrome.alarms.create("reminderAlarm", {
+        browser.alarms.create("reminderAlarm", {
           when: result.timerData.endTime,
         });
       }
