@@ -3,6 +3,15 @@
   "name": "Reboost - Track Water Intake and Set Reminders",
   "version": "1.2.6",
   "description": "Track your water intake and set custom reminders. Stay hydrated, stay on track, and never miss a break! ✨",
+  "browser_action": {
+    "default_popup": "index.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
   "action": {
     "default_popup": "index.html",
     "default_icon": {
@@ -20,6 +29,6 @@
   },
   "permissions": ["storage", "notifications", "alarms"],
   "background": {
-    "service_worker": "background.js"
-  }
+  "scripts": ["background.js"]
+}
 }
